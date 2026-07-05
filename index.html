@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gini · Checkbox — مكوّن الاختيار المتعدد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GINI · CHECKBOX COMPONENT
+   Square 22px atom (7px radius) — gray ring OFF, solid orange +
+   white tick ON, orange + dash for INDETERMINATE. Selectable
+   cards reuse THE Gini selected-card recipe: two-layer
+   padding-box/border-box gradient (peach fill + orange→fade
+   stroke), horizontal RTL wash from the control toward the price.
+   All colors/spacing/type from the Gini skills. Light+Dark · RTL.
+   ============================================================ */
+
+/* ---------- Color tokens (gini-color-system) ---------- */
+:root{
+  --bg-app:#FBF9F8;--bg-page:#FBF9F8;--bg-surface:#FFFFFF;--bg-elevated:#FFFFFF;--bg-subtle:#FFF9F6;
+  --bg-control:#FFFFFF;--bg-control-hover:#FEF5F1;--bg-control-active:#FEF5F1;--bg-overlay:rgba(0,0,0,.56);
+  --bg-cta:#F05D25;--bg-cta-hover:#E54A19;--bg-cta-pressed:#F37D51;--bg-cta-soft:#FEF5F1;
+  --content-primary:#1D1D1D;--content-secondary:#525252;--content-tertiary:#A1A1A1;--content-disabled:#C9C9C9;
+  --content-cta:#F05D25;--content-on-cta:#FFFFFF;
+  --border-default:#E5E5E5;--border-soft:#F2F2F2;--border-strong:#D9D9D9;
+  --border-cta:#F05D25;--border-cta-soft:#FCDFD3;--border-focus:#F05D25;
+  --bg-error:#FEE8E9;--content-error:#F21D22;--border-error:#F21D22;
+
+  /* spacing (gini-adaptive-padding) */
+  --padding-xxs:8px;--padding-xs:12px;--padding-sm:16px;--padding-md:24px;--padding-lg:32px;--padding-xl:40px;
+  --padding-mobile-page:14px;--padding-mobile-md:12px;--padding-mobile-lg:16px;
+
+  /* checkbox sizing */
+  --check-size:22px;
+
+  --font-primary:'Rubik','At Hauss Arabic','Expo Arabic',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+[data-theme="dark"]{
+  --bg-app:#0B0C0D;--bg-page:#101010;--bg-surface:#18191B;--bg-elevated:#1D1D1D;--bg-subtle:#141516;
+  --bg-control:#232427;--bg-control-hover:#2A2B2E;--bg-control-active:#2A140E;--bg-overlay:rgba(0,0,0,.72);
+  --bg-cta:#F05D25;--bg-cta-hover:#FF6433;--bg-cta-pressed:#C94318;--bg-cta-soft:#301307;
+  --content-primary:#FAFAFA;--content-secondary:#B8B8B8;--content-tertiary:#737373;--content-disabled:#595959;
+  --content-cta:#FF6433;--content-on-cta:#FFFFFF;
+  --border-default:#2A2B2E;--border-soft:#202124;--border-strong:#3A3B3F;
+  --border-cta:#F05D25;--border-cta-soft:#4A2012;--border-focus:#FF6433;
+  --bg-error:#610C0E;--content-error:#FB4949;--border-error:#FB4949;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg-page);
+  color:var(--content-primary);
+  font-family:var(--font-primary);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.4;
+}
+button,input,select,textarea{font-family:inherit;}
+
+/* ============================================================
+   THE CHECKBOX ATOM — Gini DS checkbox (Figma node 103:9520)
+   28×28 squircle (radius 12px). OFF = gray ring on control bg.
+   ON = solid orange + TWO-TONE checkmark. INDETERMINATE = dash.
+   Icons: inline <use> of #ic-tick / #ic-dash (fill #FAF5F3).
+   Driven by a real hidden <input type=checkbox> (native behaviour).
+   ============================================================ */
+.gn-input{position:absolute; opacity:0; inline-size:0; block-size:0; margin:0; pointer-events:none;}
+
+.gcheck{
+  box-sizing:border-box; position:relative; flex:0 0 auto;
+  inline-size:28px; block-size:28px; border-radius:12px;
+  background:var(--bg-control);
+  border:2px solid var(--border-default);   /* 2px Border/Natural-Primary #e5e5e5 */
+  display:grid; place-items:center;
+  transition:background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.gcheck__ic{position:absolute; inline-size:20px; block-size:20px; opacity:0; transition:opacity .15s ease;}
+
+/* ON — fill orange + show two-tone tick (adjacency covers every use) */
+.gn-input:checked + .gcheck{ background:var(--bg-cta); border-color:var(--bg-cta); }
+.gn-input:checked + .gcheck .gcheck__tick{ opacity:1; }
+
+/* INDETERMINATE — fill orange + show dash (native :indeterminate) */
+.gn-input:indeterminate + .gcheck{ background:var(--bg-cta); border-color:var(--bg-cta); }
+.gn-input:indeterminate + .gcheck .gcheck__dash{ opacity:1; }
+.gn-input:indeterminate + .gcheck .gcheck__tick{ opacity:0; }
+
+/* HOVER (enabled, unchecked) — orange ring tint */
+.gn-opt:hover .gn-input:not(:disabled):not(:checked):not(:indeterminate) + .gcheck,
+.opt-row:hover .gn-input:not(:disabled):not(:checked):not(:indeterminate) + .gcheck,
+.reqrow:hover .gn-input:not(:disabled):not(:checked):not(:indeterminate) + .gcheck,
+.allrow:hover .gn-input:not(:disabled):not(:checked):not(:indeterminate) + .gcheck,
+.gn-card:hover:not(:has(.gn-input:checked)) .gn-input:not(:disabled) + .gcheck{ border-color:var(--bg-cta); }
+
+/* keyboard focus ring */
+.gn-input:focus-visible + .gcheck{ box-shadow:0 0 0 3px color-mix(in srgb, var(--border-focus) 30%, transparent); }
+
+/* ERROR / invalid group — red ring, red fill when on */
+.is-error .gcheck{ border-color:var(--border-error); }
+.is-error .gn-input:checked + .gcheck{ background:var(--border-error); border-color:var(--border-error); }
+
+/* DISABLED */
+.gn-input:disabled + .gcheck{ background:var(--bg-subtle); border-color:var(--border-default); }
+.gn-input:disabled:checked + .gcheck,
+.gn-input:disabled:indeterminate + .gcheck{ background:var(--content-disabled); border-color:var(--content-disabled); }
+
+/* READ-ONLY (locked value, not faded) — muted gray fill + tick */
+.gcheck.is-readonly{ background:var(--content-tertiary); border-color:var(--content-tertiary); }
+.gcheck.is-readonly .gcheck__tick{ opacity:1; }
+.gn-opt.is-readonly,.opt-row.is-readonly{ cursor:default; }
+
+/* ============================================================
+   PAGE CHROME
+   ============================================================ */
+.topbar{
+  position:sticky; top:0; z-index:20;
+  display:flex; align-items:center; justify-content:space-between; gap:var(--padding-sm);
+  padding-inline:var(--padding-lg); padding-block:var(--padding-sm);
+  background:color-mix(in srgb, var(--bg-page) 88%, transparent);
+  backdrop-filter:saturate(180%) blur(12px);
+  border-bottom:1px solid var(--border-soft);
+}
+.topbar__brand{display:flex; align-items:center; gap:10px;}
+.topbar__dot{inline-size:26px; block-size:26px; border-radius:8px; background:var(--bg-cta); display:grid; place-items:center;}
+.topbar__dot svg{inline-size:16px; block-size:16px; fill:none; stroke:#fff; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
+.topbar__title{font-size:16px; font-weight:500;}
+.topbar__title small{display:block; font-size:12px; font-weight:400; color:var(--content-secondary);}
+.topnav{display:flex; gap:6px;}
+.topnav a{font-size:13px; font-weight:500; text-decoration:none; color:var(--content-secondary); padding:7px 13px; border-radius:999px; border:1px solid transparent;}
+.topnav a.is-active{color:var(--content-cta); background:var(--bg-cta-soft); border-color:var(--border-cta-soft);}
+.theme-btn{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:inherit; font-size:13px; font-weight:500; color:var(--content-primary);
+  background:var(--bg-control); border:1px solid var(--border-default);
+  padding:8px 14px; border-radius:999px; cursor:pointer;
+  transition:background-color .15s, border-color .15s;
+}
+.theme-btn:hover{background:var(--bg-control-hover); border-color:var(--border-strong);}
+
+.wrap{max-width:1040px; margin-inline:auto; padding-inline:var(--padding-lg); padding-block:var(--padding-xl);
+  display:flex; flex-direction:column; gap:var(--padding-md);}
+
+.lede h1{margin:0 0 8px; font-size:32px; font-weight:500; letter-spacing:-.01em;}
+.lede p{margin:0; font-size:16px; font-weight:400; color:var(--content-secondary); max-width:70ch;}
+
+/* Section card */
+.card{
+  background:var(--bg-surface);
+  border:1px solid var(--border-soft);
+  border-radius:20px;
+  padding:var(--padding-md);
+}
+.card__head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:18px;}
+.card__head h2{margin:0; font-size:22px; font-weight:500;}
+.card__head .tag{
+  font-size:11px; font-weight:500; color:var(--content-cta);
+  background:var(--bg-cta-soft); border:1px solid var(--border-cta-soft);
+  padding:4px 10px; border-radius:999px; white-space:nowrap;
+}
+.card__sub{margin:-10px 0 18px; font-size:13px; font-weight:400; color:var(--content-secondary); line-height:1.6;}
+.card__sub code{background:var(--bg-subtle); border:1px solid var(--border-soft); padding:1px 6px; border-radius:6px; font-size:12px;}
+
+/* group divider heading */
+.group-head{display:flex; align-items:center; gap:14px; margin:18px 2px 2px;}
+.group-head h3{margin:0; font-size:14px; font-weight:500; letter-spacing:.02em; color:var(--content-cta); white-space:nowrap;}
+.group-head::after{content:""; flex:1 1 auto; height:1px; background:var(--border-soft);}
+
+/* ============================================================
+   VARIANT: BASE STATES — small swatch grid
+   ============================================================ */
+.states{display:flex; flex-wrap:wrap; gap:14px;}
+.swatch{
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+  min-width:118px; flex:1 1 118px;
+  padding:20px 12px 14px;
+  border:1px dashed var(--border-default); border-radius:16px;
+  background:var(--bg-subtle);
+}
+.swatch__label{font-size:13px; font-weight:500; color:var(--content-primary);}
+.swatch__code{font-size:11px; font-weight:400; color:var(--content-tertiary);}
+.gn-opt{display:inline-flex; align-items:center; cursor:pointer; margin:0;}
+.gn-opt.is-disabled{cursor:not-allowed;}
+
+/* ============================================================
+   VARIANT: label + description (vertical group)
+   ============================================================ */
+.list{display:flex; flex-direction:column; gap:4px;}
+.opt-row{
+  display:flex; align-items:center; gap:12px;
+  padding:12px 8px; border-radius:12px; cursor:pointer; margin:0;
+  transition:background-color .15s;
+}
+.opt-row:hover{background:var(--bg-control-hover);}
+.opt-row__text{display:flex; flex-direction:column; gap:3px; flex:1 1 auto; min-width:0;}
+.opt-row__title{font-size:16px; font-weight:500; color:var(--content-primary); line-height:22.4px;}
+.opt-row__desc{font-size:13px; font-weight:400; color:var(--content-secondary); line-height:18.2px;}
+.opt-row:has(.gn-input:disabled){cursor:not-allowed;}
+.opt-row:has(.gn-input:disabled) .opt-row__title,
+.opt-row:has(.gn-input:disabled) .opt-row__desc{color:var(--content-disabled);}
+.opt-row:has(.gn-input:disabled):hover{background:transparent;}
+
+/* ============================================================
+   VARIANT: CARDS ⭐ — THE gradient-stroke recipe
+   checkbox at inline-start (right in RTL), text, price at inline-end
+   ============================================================ */
+.cards{display:flex; flex-direction:column; gap:12px;}
+.gn-card{
+  display:flex; align-items:center; gap:14px;
+  padding:16px 18px;
+  background:var(--bg-control);
+  border:1.5px solid var(--border-default);
+  border-radius:16px; cursor:pointer; margin:0;
+  transition:border-color .15s, background-color .15s, box-shadow .15s;
+}
+.gn-card:hover{border-color:var(--border-strong);}
+.gn-card:has(.gn-input:focus-visible){box-shadow:0 0 0 3px color-mix(in srgb, var(--border-focus) 22%, transparent);}
+.gn-card__text{display:flex; flex-direction:column; gap:4px; flex:1 1 auto; min-width:0;}
+.gn-card__title{font-size:16px; font-weight:500; color:var(--content-primary);}
+.gn-card__title .en{color:var(--content-secondary); font-weight:400;}
+.gn-card__desc{font-size:13px; font-weight:400; color:var(--content-secondary);}
+.gn-card__price{flex:0 0 auto; font-size:16px; font-weight:500; color:var(--content-primary); white-space:nowrap; font-feature-settings:"tnum";}
+.gn-card__price .cur{font-size:13px; font-weight:400; color:var(--content-secondary); margin-inline-start:2px;}
+/* selected → the WHOLE price goes orange: number + currency + "+" (all card variants) */
+.gn-card:has(.gn-input:checked) .gn-card__price,
+.gn-card:has(.gn-input:checked) .gn-card__price .cur,
+.gn-card:has(.gn-input:checked) .gn-card__price .plus{color:var(--content-cta);}
+
+/* DISABLED card → mute EVERYTHING so it clearly reads as disabled (all card variants) */
+.gn-card:has(.gn-input:disabled){cursor:not-allowed;}
+.gn-card:has(.gn-input:disabled):hover{border-color:var(--border-default);}
+.gn-card:has(.gn-input:disabled) .gn-card__title,
+.gn-card:has(.gn-input:disabled) .gn-card__title .en,
+.gn-card:has(.gn-input:disabled) .gn-card__desc,
+.gn-card:has(.gn-input:disabled) .gn-card__price,
+.gn-card:has(.gn-input:disabled) .gn-card__price .cur,
+.gn-card:has(.gn-input:disabled) .gn-card__price .plus{color:var(--content-disabled);}
+.gn-card:has(.gn-input:disabled) .gn-card__icon{opacity:.5;}
+
+/* ⭐ selected card — two-layer gradient (peach fill + orange→fade stroke) */
+.cards--check .gn-card{border-radius:24px;}
+.cards--check .gn-card:has(.gn-input:checked){
+  border:1.5px solid transparent;
+  background:
+    linear-gradient(-89.5deg, #FFEEE5 0%, #FFF8F4 32%, #FFFFFF 100%) padding-box,
+    linear-gradient(-90deg, #F05D25 0%, #FFBF98 18%, #FFDDCE 48%, #FFF4ED 100%) border-box;}
+[data-theme="dark"] .cards--check .gn-card:has(.gn-input:checked){
+  background:
+    linear-gradient(-89.5deg, #2C1F17 0%, #241E1A 32%, var(--bg-control) 100%) padding-box,
+    linear-gradient(-90deg, #F05D25 0%, #B36A3E 40%, #3A2A20 100%) border-box;}
+
+/* ===== Icon cards — white rounded icon box that colors on select ===== */
+.cards--icon .gn-card{border-radius:24px;}
+.cards--icon .gn-card:has(.gn-input:checked){
+  border:1.5px solid transparent;
+  background:
+    linear-gradient(-89.5deg, #FFEEE5 0%, #FFF8F4 32%, #FFFFFF 100%) padding-box,
+    linear-gradient(-90deg, #F05D25 0%, #FFBF98 18%, #FFDDCE 48%, #FFF4ED 100%) border-box;}
+[data-theme="dark"] .cards--icon .gn-card:has(.gn-input:checked){
+  background:
+    linear-gradient(-89.5deg, #2C1F17 0%, #241E1A 32%, var(--bg-control) 100%) padding-box,
+    linear-gradient(-90deg, #F05D25 0%, #B36A3E 40%, #3A2A20 100%) border-box;}
+.gn-card__icon{flex:0 0 auto; inline-size:48px; block-size:48px; border-radius:16px; display:grid; place-items:center;
+  background:#FFFFFF; border:1px solid var(--border-default); color:var(--content-tertiary); transition:color .18s ease, border-color .18s ease;}
+.gn-card__icon svg{inline-size:28px; block-size:28px;}
+.gn-card__icon .acc{fill:var(--content-tertiary); transition:fill .18s ease;}
+.cards--icon .gn-card:hover .gn-card__icon,
+.cards--icon .gn-card:has(.gn-input:checked) .gn-card__icon{color:#F05D25; border-color:#EFD9CD;}
+.cards--icon .gn-card:hover .gn-card__icon .acc,
+.cards--icon .gn-card:has(.gn-input:checked) .gn-card__icon .acc{fill:#FDB022;}
+[data-theme="dark"] .gn-card__icon{background:var(--bg-control); border-color:var(--border-default);}
+[data-theme="dark"] .cards--icon .gn-card:hover .gn-card__icon,
+[data-theme="dark"] .cards--icon .gn-card:has(.gn-input:checked) .gn-card__icon{color:#FF6E3C; border-color:#4A2012;}
+/* price "+" prefix (same as radio add-ons) */
+.gn-card__price .plus{color:var(--content-secondary); margin-inline-end:1px;}
+
+/* ============================================================
+   VARIANT: CHECK-ALL — Figma node 1117:7422
+   Bordered inner container, parent row with bottom divider,
+   children with no indent. Uses the shared .gcheck atom above.
+   ============================================================ */
+.allbox{display:flex; flex-direction:column; gap:2px;
+  border:1px solid var(--border-soft); border-radius:24px; padding:13px 17px;}
+.allrow{display:flex; align-items:center; gap:12px; width:100%; padding-block:12px; cursor:pointer; margin:0;}
+.allrow--parent{padding-top:12px; padding-bottom:13px; border-bottom:1px solid var(--border-soft);}
+.allrow__label{flex:1 1 0; min-width:0; text-align:right;
+  font-size:16px; font-weight:500; line-height:22.4px; color:var(--content-primary);}
+
+/* ============================================================
+   VARIANT: inline / horizontal group
+   ============================================================ */
+.inline-group{display:flex; flex-wrap:wrap; gap:12px 24px;}
+.opt-inline{display:inline-flex; align-items:center; gap:10px; cursor:pointer; margin:0; font-size:15px; font-weight:400; color:var(--content-secondary);}
+.opt-inline:has(.gn-input:checked){color:var(--content-primary); font-weight:500;}
+
+/* ============================================================
+   VARIANT: required field CARD — Figma node 1114:11924
+   warm cream card (white→#FFFAE8 gradient + gold border) +
+   "مطلوب" badge + unchecked rows. Checkbox on the leading (right) edge.
+   ============================================================ */
+.reqcard{
+  display:flex; flex-direction:column; gap:4px;
+  padding:17px 17px 13px;
+  border:1px solid #FAE9CA;
+  border-radius:24px;
+  background:linear-gradient(71.8deg, #FFFFFF 4.33%, #FFFAE8 110.31%);
+  transition:background .25s ease, border-color .25s ease;
+}
+[data-theme="dark"] .reqcard{
+  border-color:#4A3D1A;
+  background:linear-gradient(71.8deg, var(--bg-surface) 4.33%, #26200F 110.31%);
+}
+.reqcard__head{display:flex; align-items:center; gap:16px; width:100%;}
+.reqcard__title{flex:1 1 0; min-width:0; text-align:right;
+  font-size:16px; font-weight:500; line-height:22.4px; color:var(--content-primary);}
+.reqcard__badge{flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; gap:5px;
+  padding:8px; border-radius:48px; background:#FFF3CC; color:#916104;
+  font-size:14px; font-weight:500; line-height:1.2; white-space:nowrap;
+  transition:background .25s ease, color .25s ease;}
+[data-theme="dark"] .reqcard__badge{background:#3A2D08; color:#E9C25A;}
+.reqcard__badge .badge-ico{inline-size:13px; block-size:13px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
+.reqcard__badge .badge-done{display:none; align-items:center; gap:5px;}
+.reqrow{display:flex; align-items:center; gap:12px; width:100%;
+  padding-block:12px; border-radius:12px; cursor:pointer; margin:0;}
+.reqrow__label{flex:1 1 0; min-width:0; text-align:right;
+  font-size:16px; font-weight:500; line-height:22.4px; color:var(--content-primary);}
+/* error variant — Figma node 1116:7420 (red instead of gold; badge px 13/8) */
+.reqcard--error{
+  border-color:#FFCFD0;
+  background:linear-gradient(71.8deg, #FFFFFF 4.33%, #FEE8E9 110.31%);
+}
+.reqcard--error .reqcard__badge{background:#FEE8E9; color:#F21D22; padding:8px 13px;}
+[data-theme="dark"] .reqcard--error{
+  border-color:#5A2224;
+  background:linear-gradient(71.8deg, var(--bg-surface) 4.33%, #2A1315 110.31%);
+}
+[data-theme="dark"] .reqcard--error .reqcard__badge{background:#3A1416; color:#FB4949;}
+/* pattern variant — bit `uxui.gini/ui/gini-gradient-pattern`@0.0.2, tone "main — warm / brand".
+   .gini-grad-host / .gini-grad copied VERBATIM from the component CSS;
+   the asset is the component's bundled assets/main.svg (byte-identical copy). */
+.gini-grad-host{position:relative; isolation:isolate; overflow:hidden;}
+.gini-grad{position:absolute; inset:0; z-index:-1; pointer-events:none; border-radius:inherit;
+  background-position:top center;
+  background-size:108% auto; /* approved "level 1" reach */
+  background-repeat:no-repeat;}
+.reqcard--pattern{background:#FFFFFF;}
+[data-theme="dark"] .reqcard--pattern{background:var(--bg-surface);}
+/* satisfied → the glow clears, like the tint on the other two states */
+.reqcard--pattern:has(.gn-input:checked) .gini-grad{display:none;}
+/* SATISFIED — when ≥1 option is checked, the required/error tint clears to white
+   and the badge flips to a green «تم» success (works for BOTH gold & red cards) */
+.reqcard:has(.gn-input:checked){background:var(--bg-control); border-color:var(--border-default);}
+.reqcard:has(.gn-input:checked) .reqcard__badge{background:#E7F6EC; color:#067647; padding:8px 13px;}
+[data-theme="dark"] .reqcard:has(.gn-input:checked) .reqcard__badge{background:#0B2E1C; color:#75E0A7;}
+.reqcard:has(.gn-input:checked) .reqcard__badge .badge-req{display:none;}
+.reqcard:has(.gn-input:checked) .reqcard__badge .badge-done{display:inline-flex;}
+/* small caption above each state demo */
+.reqcard-cap{margin:0 2px 8px; font-size:12px; font-weight:500; color:var(--content-tertiary);}
+.reqcard-cap--gap{margin-top:20px;}
+
+/* «متى تُستخدم؟» usage callout */
+.usenote{display:flex; align-items:flex-start; gap:9px; margin-top:16px;
+  padding:11px 13px; border-radius:12px;
+  background:var(--bg-subtle); border:1px solid var(--border-soft);
+  font-size:12.5px; line-height:1.75; color:var(--content-secondary);}
+.usenote svg{flex:0 0 auto; inline-size:16px; block-size:16px; margin-top:2px;
+  color:var(--content-cta); fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
+.usenote b{color:var(--content-primary); font-weight:500;}
+
+/* agreement row */
+.agree{display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border-radius:16px; cursor:pointer; margin:0;
+  background:var(--bg-subtle); border:1px solid var(--border-soft);}
+.agree .gcheck{margin-top:1px;}
+.agree__text{font-size:14px; font-weight:400; color:var(--content-secondary); line-height:1.6;}
+.agree__text a{color:var(--content-cta); text-decoration:none; font-weight:500;}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:640px){
+  .topbar{padding-inline:var(--padding-mobile-lg);}
+  .topbar__title small{display:none;}
+  .wrap{padding-inline:var(--padding-mobile-page); padding-block:var(--padding-md); gap:var(--padding-sm);}
+  .card{padding:var(--padding-sm);}
+  .lede h1{font-size:26px;}
+  .card__head h2{font-size:19px;}
+  .gn-card{padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<!-- shared checkbox icons (Figma two-tone checkmark + dash, node 103:9520) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="ic-tick" viewBox="0 0 20 20">
+    <path d="M16.4226 5.40033C16.748 5.72577 16.748 6.2534 16.4226 6.57884L8.40175 14.5997C8.07632 14.9251 7.54868 14.9251 7.22324 14.5997C6.89781 14.2742 6.89781 13.7466 7.22324 13.4212L15.2441 5.40033C15.5695 5.07489 16.0972 5.07489 16.4226 5.40033Z" fill="#FAF5F3"/>
+    <path opacity="0.4" d="M3.57741 9.77533C3.90285 9.44992 4.43048 9.44992 4.75592 9.77533L8.40175 13.4212C8.72717 13.7466 8.72717 14.2743 8.40175 14.5997C8.07632 14.9251 7.54868 14.9251 7.22324 14.5997L3.57741 10.9538C3.25197 10.6284 3.25197 10.1008 3.57741 9.77533Z" fill="#FAF5F3"/>
+  </symbol>
+  <symbol id="ic-dash" viewBox="0 0 20 20">
+    <path d="M16.5049 10C16.5049 10.4602 16.1318 10.8333 15.6716 10.8333L4.3284 10.8333C3.86818 10.8333 3.49509 10.4602 3.49507 10C3.49506 9.53978 3.86818 9.16666 4.3284 9.16667H15.6716C16.1318 9.16666 16.5049 9.53978 16.5049 10Z" fill="#FAF5F3"/>
+  </symbol>
+</svg>
+
+<header class="topbar">
+  <div class="topbar__brand">
+    <span class="topbar__dot"><svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg></span>
+    <span class="topbar__title">Gini · Checkbox
+      <small>مكوّن الاختيار المتعدد — كل الحالات بأسلوب جني</small>
+    </span>
+  </div>
+  <nav class="topnav">
+    <a href="index.html">Radio</a>
+    <a href="checkbox.html" class="is-active">Checkbox</a>
+    <a href="stepper.html">Stepper</a>
+  </nav>
+  <button class="theme-btn" id="themeBtn" type="button">
+    <span id="themeIcon">🌙</span><span id="themeLabel">الوضع الداكن</span>
+  </button>
+</header>
+
+<main class="wrap">
+
+  <div class="lede">
+    <h1>مكوّن الاختيار المتعدد (Checkbox)</h1>
+    <p>مربّع اختيار مبني على ذرّة الدزاين سستم (حلقة رمادية للحالة غير المحدّدة، تعبئة برتقالية مصمتة مع علامة صح للمحدّدة، وشرطة للحالة الجزئية). البطاقات القابلة للاختيار تستخدم نفس وصفة جني للحالة المحدّدة: طبقتا تدرّج (خوخي للداخل + ستروك برتقالي يشتعل عند المربّع ويتلاشى نحو السعر).</p>
+  </div>
+
+  <!-- ============ BASE STATES ============ -->
+  <section class="card">
+    <div class="card__head"><h2>الحالات الأساسية</h2></div>
+    <p class="card__sub">الذرّة نفسها بكل حالات التفاعل — مشتقّة من حقل <code>input type="checkbox"</code> أصلي فسلوكها حقيقي (نقر، لوحة مفاتيح، وحالة <code>:indeterminate</code> الأصلية).</p>
+    <div class="states">
+
+      <div class="swatch">
+        <label class="gn-opt"><input class="gn-input" type="checkbox"><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span class="swatch__label">غير محدّد</span><span class="swatch__code">Unchecked</span>
+      </div>
+
+      <div class="swatch">
+        <label class="gn-opt"><input class="gn-input" type="checkbox" checked><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span class="swatch__label">محدّد</span><span class="swatch__code">Checked</span>
+      </div>
+
+      <div class="swatch">
+        <label class="gn-opt"><input class="gn-input" type="checkbox" data-indeterminate><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span class="swatch__label">جزئي</span><span class="swatch__code">Indeterminate</span>
+      </div>
+
+      <div class="swatch">
+        <label class="gn-opt"><input class="gn-input" type="checkbox"><span class="gcheck" style="border-color:var(--bg-cta);"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span class="swatch__label">تمرير</span><span class="swatch__code">Hover</span>
+      </div>
+
+      <div class="swatch">
+        <label class="gn-opt"><input class="gn-input" type="checkbox" checked><span class="gcheck" style="box-shadow:0 0 0 3px color-mix(in srgb,var(--border-focus) 30%,transparent);"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span class="swatch__label">تركيز</span><span class="swatch__code">Focus ring</span>
+      </div>
+
+      <div class="swatch is-error">
+        <label class="gn-opt"><input class="gn-input" type="checkbox" checked><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span class="swatch__label">خطأ</span><span class="swatch__code">Invalid</span>
+      </div>
+
+      <div class="swatch">
+        <label class="gn-opt is-disabled"><input class="gn-input" type="checkbox" disabled><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span class="swatch__label">معطّل</span><span class="swatch__code">Disabled · off</span>
+      </div>
+
+      <div class="swatch">
+        <label class="gn-opt is-disabled"><input class="gn-input" type="checkbox" checked disabled><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span class="swatch__label">معطّل ومحدّد</span><span class="swatch__code">Disabled · on</span>
+      </div>
+
+      <div class="swatch">
+        <label class="gn-opt is-readonly"><input class="gn-input" type="checkbox" checked onclick="return false"><span class="gcheck is-readonly"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span class="swatch__label">للقراءة فقط</span><span class="swatch__code">Read-only</span>
+      </div>
+
+    </div>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> مرجع بصري لكل الحالات — للتصميم والتطوير والتوثيق، ولا يُعرض بهذا الشكل في الواجهة الحقيقية.</div></div>
+  </section>
+
+  <!-- ============ label + description ============ -->
+  <section class="card">
+    <div class="card__head"><h2>عنوان ووصف</h2></div>
+    <p class="card__sub">المجموعة العمودية القياسية: مربّع + عنوان + وصف اختياري. يمكن اختيار أكثر من خيار.</p>
+    <div class="list">
+      <label class="opt-row">
+        <input class="gn-input" type="checkbox" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="opt-row__text">
+          <span class="opt-row__title">إشعارات الحجز</span>
+          <span class="opt-row__desc">تأكيد الحجز وتذكيرات الموعد.</span>
+        </span>
+      </label>
+      <label class="opt-row">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="opt-row__text">
+          <span class="opt-row__title">العروض والتخفيضات</span>
+          <span class="opt-row__desc">أرسل لي أحدث العروض من الأماكن القريبة.</span>
+        </span>
+      </label>
+      <label class="opt-row">
+        <input class="gn-input" type="checkbox" disabled>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="opt-row__text">
+          <span class="opt-row__title">رسائل SMS</span>
+          <span class="opt-row__desc">غير متاح — لم يتم توثيق رقم الجوال.</span>
+        </span>
+      </label>
+    </div>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> حين يحتاج كل خيار شرحاً تحت عنوانه: إعدادات الإشعارات، الأذونات والصلاحيات، واختيار الخطط والباقات.</div></div>
+  </section>
+
+  <!-- ============ CHECKBOX + LABEL ONLY (title only, no description) ============ -->
+  <section class="card">
+    <div class="card__head"><h2>مربّع + عنوان فقط</h2></div>
+    <p class="card__sub">أبسط صيغة — مربّع وعنوان في صفّه، بلا وصف ولا عنوان رئيسي. مناسب للقوائم القصيرة التي لا يحتاج فيها الخيار أي شرح.</p>
+    <div class="list">
+      <label class="opt-row">
+        <input class="gn-input" type="checkbox" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="opt-row__text"><span class="opt-row__title">واي-فاي مجاني</span></span>
+      </label>
+      <label class="opt-row">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="opt-row__text"><span class="opt-row__title">موقف سيارات</span></span>
+      </label>
+      <label class="opt-row">
+        <input class="gn-input" type="checkbox" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="opt-row__text"><span class="opt-row__title">مكيّف</span></span>
+      </label>
+      <label class="opt-row">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="opt-row__text"><span class="opt-row__title">مناسب للعائلات</span></span>
+      </label>
+    </div>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> القوائم القصيرة السريعة: الفلاتر والمزايا، تفضيلات الإعدادات البسيطة، قوائم المهام (To-do)، تحديد صفوف من جدول، والأسئلة متعددة الاختيار — أي خيار لا يحتاج شرحاً إضافياً.</div></div>
+  </section>
+
+  <!-- ============ CARDS ⭐ gradient stroke ============ -->
+  <section class="card">
+    <div class="card__head">
+      <h2>بطاقات قابلة للاختيار</h2>
+      <span class="tag">★ وصفة الستروك المتدرّج</span>
+    </div>
+    <p class="card__sub">اختيار متعدّد — مربّع على اليمين، العنوان والوصف في المنتصف، والسعر على اليسار. البطاقة المحدّدة تأخذ <code>border:transparent</code> + طبقتَي تدرّج: خوخي للـ<code>padding-box</code>، وستروك برتقالي للـ<code>border-box</code> يشتعل عند المربّع ويتلاشى نحو السعر.</p>
+    <div class="cards cards--check">
+
+      <label class="gn-card">
+        <input class="gn-input" type="checkbox" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="gn-card__text">
+          <span class="gn-card__title">مقعد أطفال <span class="en">(Child seat)</span></span>
+          <span class="gn-card__desc">كرسي أمان مثبّت لعمر 1–4 سنوات.</span>
+        </span>
+        <span class="gn-card__price">5,000<span class="cur">د.ع</span></span>
+      </label>
+
+      <label class="gn-card">
+        <input class="gn-input" type="checkbox" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="gn-card__text">
+          <span class="gn-card__title">مياه مجّانية <span class="en">(Water)</span></span>
+          <span class="gn-card__desc">قنينتا ماء باردتان داخل السيارة.</span>
+        </span>
+        <span class="gn-card__price">مجّاناً</span>
+      </label>
+
+      <label class="gn-card">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="gn-card__text">
+          <span class="gn-card__title">توصيل فاخر <span class="en">(Premium)</span></span>
+          <span class="gn-card__desc">سيارة حديثة وسائق مخصّص.</span>
+        </span>
+        <span class="gn-card__price">20,000<span class="cur">د.ع</span></span>
+      </label>
+
+      <label class="gn-card">
+        <input class="gn-input" type="checkbox" disabled>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="gn-card__text">
+          <span class="gn-card__title">تأمين إضافي <span class="en">(Insurance)</span></span>
+          <span class="gn-card__desc">غير متاح لهذا المشوار.</span>
+        </span>
+        <span class="gn-card__price">—</span>
+      </label>
+
+    </div>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> اختيار خدمات أو إضافات لها سعر، الباقات، والخيارات المهمّة التي تحتاج إبرازاً بصرياً ومساحة لمس أكبر.</div></div>
+  </section>
+
+  <!-- ============ ICON CARDS — same icons/colors/box as radio add-ons ============ -->
+  <section class="card">
+    <div class="card__head"><h2>بطاقات بأيقونة</h2></div>
+    <p class="card__sub">نفس أيقونات الإضافات في مكوّن الراديو — أيقونة مصمتة داخل صندوق أبيض، تتلوّن برتقالياً مع لمسة ذهبية عند التحديد أو التمرير. اختيار متعدّد بمربّع على اليمين.</p>
+    <div class="cards cards--icon">
+
+      <label class="gn-card">
+        <input class="gn-input" type="checkbox" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="gn-card__icon"><svg viewBox="0 0 24 24" fill="currentColor"><circle class="acc" cx="7.5" cy="5" r="1.05"/><circle class="acc" cx="12" cy="4.4" r="1.05"/><circle class="acc" cx="16.5" cy="5" r="1.05"/><rect x="7" y="6" width="1" height="3.4" rx=".4"/><rect x="11.5" y="5.4" width="1" height="4" rx=".4"/><rect x="16" y="6" width="1" height="3.4" rx=".4"/><rect x="4.5" y="10" width="15" height="9.2" rx="2"/><rect class="acc" x="3" y="19.5" width="18" height="1.9" rx=".95"/></svg></span>
+        <span class="gn-card__text">
+          <span class="gn-card__title">كيكة احتفال</span>
+          <span class="gn-card__desc">حسب الحجم والنكهة.</span>
+        </span>
+        <span class="gn-card__price"><span class="plus">+</span>40,000<span class="cur">د.ع</span></span>
+      </label>
+
+      <label class="gn-card">
+        <input class="gn-input" type="checkbox" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="gn-card__icon"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5.8" r="2.5"/><circle cx="17.2" cy="9.6" r="2.5"/><circle cx="15.2" cy="15.4" r="2.5"/><circle cx="8.8" cy="15.4" r="2.5"/><circle cx="6.8" cy="9.6" r="2.5"/><circle class="acc" cx="12" cy="10.9" r="2.6"/></svg></span>
+        <span class="gn-card__text">
+          <span class="gn-card__title">باقة ورد</span>
+          <span class="gn-card__desc">تُسلّم مع الكيكة.</span>
+        </span>
+        <span class="gn-card__price"><span class="plus">+</span>15,000<span class="cur">د.ع</span></span>
+      </label>
+
+      <label class="gn-card">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="gn-card__icon"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4.5" y="11" width="15" height="10" rx="1.3"/><rect x="3.5" y="7" width="17" height="4" rx="1"/><rect class="acc" x="11" y="7" width="2" height="14"/><path class="acc" d="M12 7c-1.2 0-2.2-.5-2.7-1.4-.5-.9.1-2 1.1-2.1.9-.1 1.4.7 1.6 1.6.2-.9.7-1.7 1.6-1.6 1 .1 1.6 1.2 1.1 2.1C14.2 6.5 13.2 7 12 7z"/></svg></span>
+        <span class="gn-card__text">
+          <span class="gn-card__title">تغليف هدية</span>
+          <span class="gn-card__desc">كرتون فاخر مع شريط.</span>
+        </span>
+        <span class="gn-card__price"><span class="plus">+</span>5,000<span class="cur">د.ع</span></span>
+      </label>
+
+    </div>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> نفس البطاقات مع أيقونة تُسرّع التعرّف البصري: الإضافات، المزايا المميّزة، وفئات الخدمات.</div></div>
+  </section>
+
+  <!-- ============ CHECK-ALL — Figma node 1117:7422 (exact) ============ -->
+  <section class="card">
+    <div class="card__head">
+      <h2>تحديد الكل</h2>
+      <span class="tag">Indeterminate</span>
+    </div>
+    <p class="card__sub">مربّع رئيسي يتحكّم بالمجموعة: يصبح <code>محدّداً</code> عند تحديد الكل، و<code>جزئياً</code> (شرطة) عند تحديد بعضها فقط.</p>
+    <div class="allbox">
+      <label class="allrow allrow--parent">
+        <input class="gn-input" type="checkbox" id="featAll">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="allrow__label">كل الخدمات الإضافية</span>
+      </label>
+      <label class="allrow">
+        <input class="gn-input" type="checkbox" name="feat" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="allrow__label">واي-فاي داخل السيارة</span>
+      </label>
+      <label class="allrow">
+        <input class="gn-input" type="checkbox" name="feat" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="allrow__label">شاحن هاتف</span>
+      </label>
+      <label class="allrow">
+        <input class="gn-input" type="checkbox" name="feat" checked>
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="allrow__label">تكييف مسبق</span>
+      </label>
+    </div>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> القوائم الطويلة التي تحتاج «تحديد الكل» دفعة واحدة: الأذونات، اختيار عناصر متعددة، وصفوف الجداول.</div></div>
+  </section>
+
+  <div class="group-head"><h3>أنماط واستخدامات إضافية</h3></div>
+
+  <!-- ============ INLINE ============ -->
+  <section class="card">
+    <div class="card__head"><h2>أفقي (Inline)</h2></div>
+    <p class="card__sub">مجموعة مضغوطة تنساب أفقياً — مناسبة للفلاتر السريعة.</p>
+    <div class="inline-group">
+      <label class="opt-inline"><input class="gn-input" type="checkbox" checked><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>مطاعم</label>
+      <label class="opt-inline"><input class="gn-input" type="checkbox"><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>كافيهات</label>
+      <label class="opt-inline"><input class="gn-input" type="checkbox" checked><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>قاعات مناسبات</label>
+      <label class="opt-inline"><input class="gn-input" type="checkbox"><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>ملاعب</label>
+    </div>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> الفلاتر السريعة المدمجة والوسوم — خيارات قصيرة تتوزّع أفقياً وتلتفّ حسب عرض الشاشة.</div></div>
+  </section>
+
+  <!-- ============ REQUIRED FIELD CARD — Figma nodes 1114:11924 (default) + 1116:7420 (error) ============ -->
+  <section class="card">
+    <div class="card__head"><h2>حقل مطلوب</h2><span class="tag">★ من Figma</span></div>
+    <p class="card__sub">بطاقة بعنوان وشارة «مطلوب» والخيارات غير محدّدة — ثلاث حالات: الافتراضية (دافئة ذهبية)، حالة الخطأ (حمراء)، وحالة الباترن (خلفية gini-gradient-pattern من bit بدرجة main). مطابقة لعقدتَي Figma 1114:11924 و1116:7420.</p>
+
+    <p class="reqcard-cap">الحالة الافتراضية — «مطلوب» ذهبية</p>
+    <div class="reqcard">
+      <div class="reqcard__head">
+        <span class="reqcard__title">اختر خدمة واحدة على الأقل</span>
+        <span class="reqcard__badge"><span class="badge-req">مطلوب</span><span class="badge-done"><svg class="badge-ico" viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg>تم</span></span>
+      </div>
+      <label class="reqrow">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="reqrow__label">تنظيف داخلي</span>
+      </label>
+      <label class="reqrow">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="reqrow__label">تعطير</span>
+      </label>
+    </div>
+
+    <p class="reqcard-cap reqcard-cap--gap">حالة الخطأ — «مطلوب» حمراء</p>
+    <div class="reqcard reqcard--error">
+      <div class="reqcard__head">
+        <span class="reqcard__title">اختر خدمة واحدة على الأقل</span>
+        <span class="reqcard__badge"><span class="badge-req">مطلوب</span><span class="badge-done"><svg class="badge-ico" viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg>تم</span></span>
+      </div>
+      <label class="reqrow">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="reqrow__label">تنظيف داخلي</span>
+      </label>
+      <label class="reqrow">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="reqrow__label">تعطير</span>
+      </label>
+    </div>
+
+    <p class="reqcard-cap reqcard-cap--gap">حالة الباترن — gini-gradient-pattern بدرجة main (warm / brand)</p>
+    <div class="reqcard reqcard--pattern gini-grad-host">
+      <span class="gini-grad" aria-hidden="true" style="background-image:url(assets/gini-gradient-pattern-main.svg)"></span>
+      <div class="reqcard__head">
+        <span class="reqcard__title">اختر خدمة واحدة على الأقل</span>
+        <span class="reqcard__badge"><span class="badge-req">مطلوب</span><span class="badge-done"><svg class="badge-ico" viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg>تم</span></span>
+      </div>
+      <label class="reqrow">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="reqrow__label">تنظيف داخلي</span>
+      </label>
+      <label class="reqrow">
+        <input class="gn-input" type="checkbox">
+        <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+        <span class="reqrow__label">تعطير</span>
+      </label>
+    </div>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> الحقول الإلزامية في النماذج: يجب اختيار خيار واحد على الأقل قبل المتابعة، مع حالة خطأ عند الإرسال فارغاً.</div></div>
+  </section>
+
+  <!-- ============ AGREEMENT ============ -->
+  <section class="card">
+    <div class="card__head"><h2>موافقة (شروط وأحكام)</h2></div>
+    <p class="card__sub">مربّع مفرد بجانب نص طويل — المربّع محاذى لأعلى السطر الأول.</p>
+    <label class="agree">
+      <input class="gn-input" type="checkbox">
+      <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+      <span class="agree__text">أوافق على <a href="#">شروط الاستخدام</a> و<a href="#">سياسة الخصوصية</a>، وأقرّ بأن بيانات الحجز صحيحة وأتحمّل مسؤولية أي معلومات غير دقيقة.</span>
+    </label>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> الموافقة على الشروط والأحكام أو سياسة الخصوصية قبل إتمام إجراء: تسجيل حساب، حجز، أو دفع.</div></div>
+  </section>
+
+</main>
+
+<script>
+  const root = document.documentElement;
+  const btn = document.getElementById('themeBtn');
+  const icon = document.getElementById('themeIcon');
+  const label = document.getElementById('themeLabel');
+  btn.addEventListener('click', () => {
+    const dark = root.getAttribute('data-theme') === 'dark';
+    root.setAttribute('data-theme', dark ? 'light' : 'dark');
+    icon.textContent = dark ? '🌙' : '☀️';
+    label.textContent = dark ? 'الوضع الداكن' : 'الوضع الفاتح';
+  });
+
+  // set the demo indeterminate swatch (no HTML attribute exists for it)
+  document.querySelectorAll('[data-indeterminate]').forEach(el => { el.indeterminate = true; });
+
+  // ---- Check-all: parent drives children, children drive parent (checked / indeterminate) ----
+  const all = document.getElementById('featAll');
+  const kids = [...document.querySelectorAll('input[name="feat"]')];
+  function syncAll(){
+    const on = kids.filter(k => k.checked).length;
+    all.checked = on === kids.length;
+    all.indeterminate = on > 0 && on < kids.length;
+  }
+  all.addEventListener('change', () => kids.forEach(k => { k.checked = all.checked; }));
+  kids.forEach(k => k.addEventListener('change', syncAll));
+  // initial render matches Figma node 1117:7422 exactly: parent shows the
+  // indeterminate DASH (the "Indeterminate" demo) while children are checked.
+  // Any user interaction then recomputes the parent logically via syncAll.
+  all.indeterminate = true;
+</script>
+</body>
+</html>
