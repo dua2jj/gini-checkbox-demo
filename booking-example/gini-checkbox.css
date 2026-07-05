@@ -1,0 +1,173 @@
+/* ============================================================
+   GINI · CHECKBOX + SELECTABLE CARDS  —  reusable stylesheet
+   Sliced VERBATIM from the published component
+   (design-system-Gini-/components/checkbox/index.html).
+   Import this once, drop the sprite in the page, use the markup.
+   ============================================================ */
+
+:root{
+  --bg-app:#FBF9F8;--bg-page:#FBF9F8;--bg-surface:#FFFFFF;--bg-elevated:#FFFFFF;--bg-subtle:#FFF9F6;
+  --bg-control:#FFFFFF;--bg-control-hover:#FEF5F1;--bg-control-active:#FEF5F1;--bg-overlay:rgba(0,0,0,.56);
+  --bg-cta:#F05D25;--bg-cta-hover:#E54A19;--bg-cta-pressed:#F37D51;--bg-cta-soft:#FEF5F1;
+  --content-primary:#1D1D1D;--content-secondary:#525252;--content-tertiary:#A1A1A1;--content-disabled:#C9C9C9;
+  --content-cta:#F05D25;--content-on-cta:#FFFFFF;
+  --border-default:#E5E5E5;--border-soft:#F2F2F2;--border-strong:#D9D9D9;
+  --border-cta:#F05D25;--border-cta-soft:#FCDFD3;--border-focus:#F05D25;
+  --bg-error:#FEE8E9;--content-error:#F21D22;--border-error:#F21D22;
+
+  /* spacing (gini-adaptive-padding) */
+  --padding-xxs:8px;--padding-xs:12px;--padding-sm:16px;--padding-md:24px;--padding-lg:32px;--padding-xl:40px;
+  --padding-mobile-page:14px;--padding-mobile-md:12px;--padding-mobile-lg:16px;
+
+  /* checkbox sizing */
+  --check-size:22px;
+
+  --font-primary:'Rubik','At Hauss Arabic','Expo Arabic',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+[data-theme="dark"]{
+  --bg-app:#0B0C0D;--bg-page:#101010;--bg-surface:#18191B;--bg-elevated:#1D1D1D;--bg-subtle:#141516;
+  --bg-control:#232427;--bg-control-hover:#2A2B2E;--bg-control-active:#2A140E;--bg-overlay:rgba(0,0,0,.72);
+  --bg-cta:#F05D25;--bg-cta-hover:#FF6433;--bg-cta-pressed:#C94318;--bg-cta-soft:#301307;
+  --content-primary:#FAFAFA;--content-secondary:#B8B8B8;--content-tertiary:#737373;--content-disabled:#595959;
+  --content-cta:#FF6433;--content-on-cta:#FFFFFF;
+  --border-default:#2A2B2E;--border-soft:#202124;--border-strong:#3A3B3F;
+  --border-cta:#F05D25;--border-cta-soft:#4A2012;--border-focus:#FF6433;
+  --bg-error:#610C0E;--content-error:#FB4949;--border-error:#FB4949;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg-page);
+  color:var(--content-primary);
+  font-family:var(--font-primary);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.4;
+}
+button,input,select,textarea{font-family:inherit;}
+
+/* ============================================================
+   THE CHECKBOX ATOM — Gini DS checkbox (Figma node 103:9520)
+   28×28 squircle (radius 12px). OFF = gray ring on control bg.
+   ON = solid orange + TWO-TONE checkmark. INDETERMINATE = dash.
+   Icons: inline <use> of #ic-tick / #ic-dash (fill #FAF5F3).
+   Driven by a real hidden <input type=checkbox> (native behaviour).
+   ============================================================ */
+.gn-input{position:absolute; opacity:0; inline-size:0; block-size:0; margin:0; pointer-events:none;}
+
+.gcheck{
+  box-sizing:border-box; position:relative; flex:0 0 auto;
+  inline-size:28px; block-size:28px; border-radius:12px;
+  background:var(--bg-control);
+  border:2px solid var(--border-default);   /* 2px Border/Natural-Primary #e5e5e5 */
+  display:grid; place-items:center;
+  transition:background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.gcheck__ic{position:absolute; inline-size:20px; block-size:20px; opacity:0; transition:opacity .15s ease;}
+
+/* ON — fill orange + show two-tone tick (adjacency covers every use) */
+.gn-input:checked + .gcheck{ background:var(--bg-cta); border-color:var(--bg-cta); }
+.gn-input:checked + .gcheck .gcheck__tick{ opacity:1; }
+
+/* INDETERMINATE — fill orange + show dash (native :indeterminate) */
+.gn-input:indeterminate + .gcheck{ background:var(--bg-cta); border-color:var(--bg-cta); }
+.gn-input:indeterminate + .gcheck .gcheck__dash{ opacity:1; }
+.gn-input:indeterminate + .gcheck .gcheck__tick{ opacity:0; }
+
+/* HOVER (enabled, unchecked) — orange ring tint */
+.gn-opt:hover .gn-input:not(:disabled):not(:checked):not(:indeterminate) + .gcheck,
+.opt-row:hover .gn-input:not(:disabled):not(:checked):not(:indeterminate) + .gcheck,
+.reqrow:hover .gn-input:not(:disabled):not(:checked):not(:indeterminate) + .gcheck,
+.allrow:hover .gn-input:not(:disabled):not(:checked):not(:indeterminate) + .gcheck,
+.gn-card:hover:not(:has(.gn-input:checked)) .gn-input:not(:disabled) + .gcheck{ border-color:var(--bg-cta); }
+
+/* keyboard focus ring */
+.gn-input:focus-visible + .gcheck{ box-shadow:0 0 0 3px color-mix(in srgb, var(--border-focus) 30%, transparent); }
+
+/* ERROR / invalid group — red ring, red fill when on */
+.is-error .gcheck{ border-color:var(--border-error); }
+.is-error .gn-input:checked + .gcheck{ background:var(--border-error); border-color:var(--border-error); }
+
+/* DISABLED */
+.gn-input:disabled + .gcheck{ background:var(--bg-subtle); border-color:var(--border-default); }
+.gn-input:disabled:checked + .gcheck,
+.gn-input:disabled:indeterminate + .gcheck{ background:var(--content-disabled); border-color:var(--content-disabled); }
+
+/* READ-ONLY (locked value, not faded) — muted gray fill + tick */
+.gcheck.is-readonly{ background:var(--content-tertiary); border-color:var(--content-tertiary); }
+.gcheck.is-readonly .gcheck__tick{ opacity:1; }
+.gn-opt.is-readonly,.opt-row.is-readonly{ cursor:default; }
+
+/* ============================================================
+   VARIANT: CARDS ⭐ — THE gradient-stroke recipe
+   checkbox at inline-start (right in RTL), text, price at inline-end
+   ============================================================ */
+.cards{display:flex; flex-direction:column; gap:12px;}
+.gn-card{
+  display:flex; align-items:center; gap:14px;
+  padding:16px 18px;
+  background:var(--bg-control);
+  border:1.5px solid var(--border-default);
+  border-radius:16px; cursor:pointer; margin:0;
+  transition:border-color .15s, background-color .15s, box-shadow .15s;
+}
+.gn-card:hover{border-color:var(--border-strong);}
+.gn-card:has(.gn-input:focus-visible){box-shadow:0 0 0 3px color-mix(in srgb, var(--border-focus) 22%, transparent);}
+.gn-card__text{display:flex; flex-direction:column; gap:4px; flex:1 1 auto; min-width:0;}
+.gn-card__title{font-size:16px; font-weight:500; color:var(--content-primary);}
+.gn-card__title .en{color:var(--content-secondary); font-weight:400;}
+.gn-card__desc{font-size:13px; font-weight:400; color:var(--content-secondary);}
+.gn-card__price{flex:0 0 auto; font-size:16px; font-weight:500; color:var(--content-primary); white-space:nowrap; font-feature-settings:"tnum";}
+.gn-card__price .cur{font-size:13px; font-weight:400; color:var(--content-secondary); margin-inline-start:2px;}
+/* selected → the WHOLE price goes orange: number + currency + "+" (all card variants) */
+.gn-card:has(.gn-input:checked) .gn-card__price,
+.gn-card:has(.gn-input:checked) .gn-card__price .cur,
+.gn-card:has(.gn-input:checked) .gn-card__price .plus{color:var(--content-cta);}
+
+/* DISABLED card → mute EVERYTHING so it clearly reads as disabled (all card variants) */
+.gn-card:has(.gn-input:disabled){cursor:not-allowed;}
+.gn-card:has(.gn-input:disabled):hover{border-color:var(--border-default);}
+.gn-card:has(.gn-input:disabled) .gn-card__title,
+.gn-card:has(.gn-input:disabled) .gn-card__title .en,
+.gn-card:has(.gn-input:disabled) .gn-card__desc,
+.gn-card:has(.gn-input:disabled) .gn-card__price,
+.gn-card:has(.gn-input:disabled) .gn-card__price .cur,
+.gn-card:has(.gn-input:disabled) .gn-card__price .plus{color:var(--content-disabled);}
+.gn-card:has(.gn-input:disabled) .gn-card__icon{opacity:.5;}
+
+/* ⭐ selected card — two-layer gradient (peach fill + orange→fade stroke) */
+.cards--check .gn-card{border-radius:24px;}
+.cards--check .gn-card:has(.gn-input:checked){
+  border:1.5px solid transparent;
+  background:
+    linear-gradient(-89.5deg, #FFEEE5 0%, #FFF8F4 32%, #FFFFFF 100%) padding-box,
+    linear-gradient(-90deg, #F05D25 0%, #FFBF98 18%, #FFDDCE 48%, #FFF4ED 100%) border-box;}
+[data-theme="dark"] .cards--check .gn-card:has(.gn-input:checked){
+  background:
+    linear-gradient(-89.5deg, #2C1F17 0%, #241E1A 32%, var(--bg-control) 100%) padding-box,
+    linear-gradient(-90deg, #F05D25 0%, #B36A3E 40%, #3A2A20 100%) border-box;}
+
+/* ===== Icon cards — white rounded icon box that colors on select ===== */
+.cards--icon .gn-card{border-radius:24px;}
+.cards--icon .gn-card:has(.gn-input:checked){
+  border:1.5px solid transparent;
+  background:
+    linear-gradient(-89.5deg, #FFEEE5 0%, #FFF8F4 32%, #FFFFFF 100%) padding-box,
+    linear-gradient(-90deg, #F05D25 0%, #FFBF98 18%, #FFDDCE 48%, #FFF4ED 100%) border-box;}
+[data-theme="dark"] .cards--icon .gn-card:has(.gn-input:checked){
+  background:
+    linear-gradient(-89.5deg, #2C1F17 0%, #241E1A 32%, var(--bg-control) 100%) padding-box,
+    linear-gradient(-90deg, #F05D25 0%, #B36A3E 40%, #3A2A20 100%) border-box;}
+.gn-card__icon{flex:0 0 auto; inline-size:48px; block-size:48px; border-radius:16px; display:grid; place-items:center;
+  background:#FFFFFF; border:1px solid var(--border-default); color:var(--content-tertiary); transition:color .18s ease, border-color .18s ease;}
+.gn-card__icon svg{inline-size:28px; block-size:28px;}
+.gn-card__icon .acc{fill:var(--content-tertiary); transition:fill .18s ease;}
+.cards--icon .gn-card:hover .gn-card__icon,
+.cards--icon .gn-card:has(.gn-input:checked) .gn-card__icon{color:#F05D25; border-color:#EFD9CD;}
+.cards--icon .gn-card:hover .gn-card__icon .acc,
+.cards--icon .gn-card:has(.gn-input:checked) .gn-card__icon .acc{fill:#FDB022;}
+[data-theme="dark"] .gn-card__icon{background:var(--bg-control); border-color:var(--border-default);}
+[data-theme="dark"] .cards--icon .gn-card:hover .gn-card__icon,
+[data-theme="dark"] .cards--icon .gn-card:has(.gn-input:checked) .gn-card__icon{color:#FF6E3C; border-color:#4A2012;}
+/* price "+" prefix (same as radio add-ons) */
+.gn-card__price .plus{color:var(--content-secondary); margin-inline-end:1px;}

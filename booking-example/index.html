@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>احجزلي · إضافات الحجز — تجربة استخدام مكوّن البطاقات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- ①  استدعاء ستايل المكوّن (مثل ما رفعناه بالضبط) -->
+<link rel="stylesheet" href="gini-checkbox.css">
+
+<!-- ستايل الصفحة نفسها (chrome) — نفس توكنز جني، بأسماء مختلفة حتى ما تتعارض مع المكوّن -->
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg-page); color:var(--content-primary); font-family:var(--font-primary);
+  -webkit-font-smoothing:antialiased; line-height:1.4; padding-bottom:104px;}
+
+/* top nav */
+.nav{position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding-inline:var(--padding-lg); padding-block:var(--padding-sm);
+  background:color-mix(in srgb, var(--bg-page) 88%, transparent); backdrop-filter:saturate(180%) blur(12px);
+  border-bottom:1px solid var(--border-soft);}
+.nav__brand{display:flex; align-items:center; gap:10px;}
+.nav__dot{inline-size:28px; block-size:28px; border-radius:9px; background:var(--bg-cta); display:grid; place-items:center;}
+.nav__dot svg{inline-size:16px; block-size:16px; fill:none; stroke:#fff; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
+.nav__t{font-size:16px; font-weight:500;}
+.nav__t small{display:block; font-size:12px; font-weight:400; color:var(--content-secondary);}
+.theme-btn{display:inline-flex; align-items:center; gap:8px; font-family:inherit; font-size:13px; font-weight:500;
+  color:var(--content-primary); background:var(--bg-control); border:1px solid var(--border-default);
+  padding:8px 14px; border-radius:999px; cursor:pointer;}
+
+.page{max-width:720px; margin-inline:auto; padding-inline:var(--padding-lg); padding-block:var(--padding-xl);
+  display:flex; flex-direction:column; gap:var(--padding-md);}
+
+/* step + hero */
+.step{font-size:13px; font-weight:500; color:var(--content-cta); letter-spacing:.02em;}
+.hero h1{margin:6px 0 8px; font-size:30px; font-weight:500; letter-spacing:-.01em;}
+.hero p{margin:0; font-size:16px; font-weight:400; color:var(--content-secondary); max-width:60ch;}
+
+/* the place being booked — a small summary chip */
+.place{display:flex; align-items:center; gap:14px; padding:14px 16px;
+  background:var(--bg-surface); border:1px solid var(--border-soft); border-radius:18px;}
+.place__img{inline-size:52px; block-size:52px; border-radius:13px; flex:0 0 auto;
+  background:linear-gradient(135deg,#FFD9C2,#F6A278); display:grid; place-items:center; font-size:24px;}
+.place__meta{display:flex; flex-direction:column; gap:3px; min-width:0;}
+.place__name{font-size:16px; font-weight:500;}
+.place__sub{font-size:13px; color:var(--content-secondary);}
+
+/* section heading */
+.sec-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:2px;}
+.sec-head h2{margin:0; font-size:20px; font-weight:500;}
+.sec-head span{font-size:13px; color:var(--content-tertiary);}
+
+/* sticky checkout summary */
+.summary{position:fixed; inset-inline:0; bottom:0; z-index:30;
+  background:color-mix(in srgb, var(--bg-surface) 92%, transparent); backdrop-filter:saturate(180%) blur(14px);
+  border-top:1px solid var(--border-soft);}
+.summary__in{max-width:720px; margin-inline:auto; display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding-inline:var(--padding-lg); padding-block:14px;}
+.summary__tot{display:flex; flex-direction:column; gap:2px;}
+.summary__lbl{font-size:12px; color:var(--content-secondary);}
+.summary__val{font-size:22px; font-weight:500; font-feature-settings:"tnum";}
+.summary__val .cur{font-size:14px; font-weight:400; color:var(--content-secondary); margin-inline-start:3px;}
+.summary__val .count{font-size:12px; font-weight:400; color:var(--content-tertiary); margin-inline-start:8px;}
+.cta{display:inline-flex; align-items:center; gap:8px; font-family:inherit; font-size:16px; font-weight:500;
+  color:var(--content-on-cta); background:var(--bg-cta); border:none; border-radius:14px; padding:14px 26px; cursor:pointer;
+  box-shadow:0 8px 20px -8px rgba(240,93,37,.6); transition:background .15s;}
+.cta:hover{background:var(--bg-cta-hover);}
+.cta svg{inline-size:18px; block-size:18px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;}
+
+@media (max-width:640px){
+  .nav{padding-inline:var(--padding-mobile-lg);}
+  .nav__t small{display:none;}
+  .page{padding-inline:var(--padding-mobile-page); padding-block:var(--padding-md);}
+  .hero h1{font-size:25px;}
+  .summary__in{padding-inline:var(--padding-mobile-lg);}
+  .cta{padding:13px 20px; font-size:15px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ②  الـ sprite (علامة الصح ثنائية اللون + الشرطة) — مرة وحدة بالصفحة، منسوخ حرفياً من المكوّن -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="ic-tick" viewBox="0 0 20 20">
+    <path d="M16.4226 5.40033C16.748 5.72577 16.748 6.2534 16.4226 6.57884L8.40175 14.5997C8.07632 14.9251 7.54868 14.9251 7.22324 14.5997C6.89781 14.2742 6.89781 13.7466 7.22324 13.4212L15.2441 5.40033C15.5695 5.07489 16.0972 5.07489 16.4226 5.40033Z" fill="#FAF5F3"/>
+    <path opacity="0.4" d="M3.57741 9.77533C3.90285 9.44992 4.43048 9.44992 4.75592 9.77533L8.40175 13.4212C8.72717 13.7466 8.72717 14.2743 8.40175 14.5997C8.07632 14.9251 7.54868 14.9251 7.22324 14.5997L3.57741 10.9538C3.25197 10.6284 3.25197 10.1008 3.57741 9.77533Z" fill="#FAF5F3"/>
+  </symbol>
+  <symbol id="ic-dash" viewBox="0 0 20 20">
+    <path d="M16.5049 10C16.5049 10.4602 16.1318 10.8333 15.6716 10.8333L4.3284 10.8333C3.86818 10.8333 3.49509 10.4602 3.49507 10C3.49506 9.53978 3.86818 9.16666 4.3284 9.16667H15.6716C16.1318 9.16666 16.5049 9.53978 16.5049 10Z" fill="#FAF5F3"/>
+  </symbol>
+</svg>
+
+<header class="nav">
+  <div class="nav__brand">
+    <span class="nav__dot"><svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg></span>
+    <span class="nav__t">احجزلي
+      <small>إتمام الحجز — الخدمات الإضافية</small>
+    </span>
+  </div>
+  <button class="theme-btn" id="themeBtn" type="button"><span id="themeIcon">🌙</span><span id="themeLabel">الوضع الداكن</span></button>
+</header>
+
+<main class="page">
+
+  <div class="hero">
+    <span class="step">الخطوة ٢ من ٣</span>
+    <h1>أضف لمساتك المميّزة</h1>
+    <p>اختر الخدمات الإضافية التي تريد إضافتها إلى حجزك. تقدر تختار أكثر من خدمة، ويُحسب المجموع تلقائياً في الأسفل.</p>
+  </div>
+
+  <!-- الحجز الحالي -->
+  <div class="place">
+    <span class="place__img">🎉</span>
+    <span class="place__meta">
+      <span class="place__name">قاعة الياسمين للمناسبات</span>
+      <span class="place__sub">الجمعة ١٢ تموز · ٧:٠٠ مساءً · ٥٠ ضيف</span>
+    </span>
+  </div>
+
+  <div class="sec-head">
+    <h2>الخدمات الإضافية</h2>
+    <span>اختياري</span>
+  </div>
+
+  <!-- ③  المكوّن: بطاقات قابلة للاختيار — نفس ماركب المكوّن المرفوع بالضبط -->
+  <div class="cards cards--check" id="addons">
+
+    <label class="gn-card" data-price="25000">
+      <input class="gn-input" type="checkbox" checked>
+      <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+      <span class="gn-card__text">
+        <span class="gn-card__title">تنسيق ورد <span class="en">(Flowers)</span></span>
+        <span class="gn-card__desc">تنسيق طاولات ومدخل القاعة بورد طبيعي.</span>
+      </span>
+      <span class="gn-card__price"><span class="plus">+</span>25,000<span class="cur">د.ع</span></span>
+    </label>
+
+    <label class="gn-card" data-price="75000">
+      <input class="gn-input" type="checkbox" checked>
+      <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+      <span class="gn-card__text">
+        <span class="gn-card__title">تصوير احترافي <span class="en">(Photography)</span></span>
+        <span class="gn-card__desc">مصوّر لمدة ٣ ساعات + ألبوم رقمي.</span>
+      </span>
+      <span class="gn-card__price"><span class="plus">+</span>75,000<span class="cur">د.ع</span></span>
+    </label>
+
+    <label class="gn-card" data-price="40000">
+      <input class="gn-input" type="checkbox">
+      <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+      <span class="gn-card__text">
+        <span class="gn-card__title">كيكة المناسبة <span class="en">(Cake)</span></span>
+        <span class="gn-card__desc">كيكة ٣ طبقات حسب النكهة والحجم.</span>
+      </span>
+      <span class="gn-card__price"><span class="plus">+</span>40,000<span class="cur">د.ع</span></span>
+    </label>
+
+    <label class="gn-card" data-price="60000">
+      <input class="gn-input" type="checkbox">
+      <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+      <span class="gn-card__text">
+        <span class="gn-card__title">دي جي وموسيقى <span class="en">(DJ)</span></span>
+        <span class="gn-card__desc">نظام صوت + دي جي لمدة الحفل.</span>
+      </span>
+      <span class="gn-card__price"><span class="plus">+</span>60,000<span class="cur">د.ع</span></span>
+    </label>
+
+    <label class="gn-card" data-price="0">
+      <input class="gn-input" type="checkbox" disabled>
+      <span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span>
+      <span class="gn-card__text">
+        <span class="gn-card__title">عرض ألعاب نارية <span class="en">(Fireworks)</span></span>
+        <span class="gn-card__desc">غير متاح في هذه القاعة.</span>
+      </span>
+      <span class="gn-card__price">—</span>
+    </label>
+
+  </div>
+
+</main>
+
+<!-- ملخّص الدفع الثابت -->
+<div class="summary">
+  <div class="summary__in">
+    <div class="summary__tot">
+      <span class="summary__lbl">إجمالي الإضافات</span>
+      <span class="summary__val"><span id="total">100,000</span><span class="cur">د.ع</span><span class="count" id="count">خدمتان مختارتان</span></span>
+    </div>
+    <button class="cta" type="button">
+      متابعة الحجز
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  // theme toggle
+  const root=document.documentElement, btn=document.getElementById('themeBtn'),
+        ico=document.getElementById('themeIcon'), lbl=document.getElementById('themeLabel');
+  btn.addEventListener('click',()=>{const d=root.getAttribute('data-theme')==='dark';
+    root.setAttribute('data-theme',d?'light':'dark'); ico.textContent=d?'🌙':'☀️'; lbl.textContent=d?'الوضع الداكن':'الوضع الفاتح';});
+
+  // running total — sums checked add-on cards
+  const fmt=n=>n.toLocaleString('en-US');
+  const arabicCount=n=>n===0?'لم تختر أي خدمة':n===1?'خدمة واحدة':n===2?'خدمتان مختارتان':`${n} خدمات مختارة`;
+  const cards=[...document.querySelectorAll('#addons .gn-card')];
+  const totalEl=document.getElementById('total'), countEl=document.getElementById('count');
+  function recalc(){
+    let sum=0, n=0;
+    cards.forEach(c=>{const i=c.querySelector('.gn-input');
+      if(i.checked && !i.disabled){ sum+=+c.dataset.price||0; n++; }});
+    totalEl.textContent=fmt(sum); countEl.textContent=arabicCount(n);
+  }
+  cards.forEach(c=>c.querySelector('.gn-input').addEventListener('change',recalc));
+  recalc();
+</script>
+</body>
+</html>
