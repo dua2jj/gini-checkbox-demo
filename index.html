@@ -33,8 +33,8 @@
   --padding-xxs:8px;--padding-xs:12px;--padding-sm:16px;--padding-md:24px;--padding-lg:32px;--padding-xl:40px;
   --padding-mobile-page:14px;--padding-mobile-md:12px;--padding-mobile-lg:16px;
 
-  /* checkbox sizing */
-  --check-size:22px;
+  /* checkbox sizing — default 28px; override --check-size for sm/lg */
+  --check-size:28px;
 
   --font-primary:'Rubik','At Hauss Arabic','Expo Arabic',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
@@ -62,22 +62,23 @@ button,input,select,textarea{font-family:inherit;}
 
 /* ============================================================
    THE CHECKBOX ATOM — Gini DS checkbox (Figma node 103:9520)
-   28×28 squircle (radius 12px). OFF = gray ring on control bg.
-   ON = solid orange + TWO-TONE checkmark. INDETERMINATE = dash.
-   Icons: inline <use> of #ic-tick / #ic-dash (fill #FAF5F3).
+   Default 28×28 squircle (radius 12px). Size-aware: set --check-size
+   (radius + tick scale with it, border stays 2px). OFF = gray ring
+   on control bg. ON = solid orange + TWO-TONE checkmark. INDETERMINATE
+   = dash. Icons: inline <use> of #ic-tick / #ic-dash (fill #FAF5F3).
    Driven by a real hidden <input type=checkbox> (native behaviour).
    ============================================================ */
 .gn-input{position:absolute; opacity:0; inline-size:0; block-size:0; margin:0; pointer-events:none;}
 
 .gcheck{
   box-sizing:border-box; position:relative; flex:0 0 auto;
-  inline-size:28px; block-size:28px; border-radius:12px;
+  inline-size:var(--check-size); block-size:var(--check-size); border-radius:calc(var(--check-size) * 3 / 7);
   background:var(--bg-control);
   border:2px solid var(--border-default);   /* 2px Border/Natural-Primary #e5e5e5 */
   display:grid; place-items:center;
   transition:background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
-.gcheck__ic{position:absolute; inline-size:20px; block-size:20px; opacity:0; transition:opacity .15s ease;}
+.gcheck__ic{position:absolute; inline-size:calc(var(--check-size) * 5 / 7); block-size:calc(var(--check-size) * 5 / 7); opacity:0; transition:opacity .15s ease;}
 
 /* ON — fill orange + show two-tone tick (adjacency covers every use) */
 .gn-input:checked + .gcheck{ background:var(--bg-cta); border-color:var(--bg-cta); }
@@ -183,6 +184,11 @@ button,input,select,textarea{font-family:inherit;}
 .swatch__code{font-size:11px; font-weight:400; color:var(--content-tertiary);}
 .gn-opt{display:inline-flex; align-items:center; cursor:pointer; margin:0;}
 .gn-opt.is-disabled{cursor:not-allowed;}
+
+/* sizes demo row */
+.sizes{display:flex; align-items:center; gap:28px; flex-wrap:wrap;}
+.size-cell{display:flex; flex-direction:column; align-items:center; gap:10px;}
+.size-cell span{font-size:12px; color:var(--content-secondary);}
 
 /* ============================================================
    VARIANT: label + description (vertical group)
@@ -480,6 +486,27 @@ button,input,select,textarea{font-family:inherit;}
 
     </div>
     <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى تُستخدم؟</b> مرجع بصري لكل الحالات — للتصميم والتطوير والتوثيق، ولا يُعرض بهذا الشكل في الواجهة الحقيقية.</div></div>
+  </section>
+
+  <!-- ============ SIZES ============ -->
+  <section class="card">
+    <div class="card__head"><h2>الأحجام</h2></div>
+    <p class="card__sub">الحجم الافتراضي <code>28px</code>، وحجمان إضافيان عبر <code>--check-size</code>: مصغّر <code>24px</code> وكبير <code>32px</code>. نصف القطر والعلامة يتكيّفان تلقائياً مع الحجم، وسمك الحدّ يبقى ثابتاً.</p>
+    <div class="sizes">
+      <div class="size-cell">
+        <label class="gn-opt"><input class="gn-input" type="checkbox" checked><span class="gcheck" style="--check-size:24px"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span>مصغّر · 24px</span>
+      </div>
+      <div class="size-cell">
+        <label class="gn-opt"><input class="gn-input" type="checkbox" checked><span class="gcheck"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span>افتراضي · 28px</span>
+      </div>
+      <div class="size-cell">
+        <label class="gn-opt"><input class="gn-input" type="checkbox" checked><span class="gcheck" style="--check-size:32px"><svg class="gcheck__ic gcheck__tick" viewBox="0 0 20 20"><use href="#ic-tick"/></svg><svg class="gcheck__ic gcheck__dash" viewBox="0 0 20 20"><use href="#ic-dash"/></svg></span></label>
+        <span>كبير · 32px</span>
+      </div>
+    </div>
+    <div class="usenote"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg><div><b>متى ووين يُستخدم كل حجم؟</b><br><b>مصغّر 24px</b> — القوائم الكثيفة والجداول، تحديد صفوف متعددة، الفلاتر الجانبية المدمجة، لوحات التحكم كثيرة الخيارات.<br><b>افتراضي 28px</b> — الاستخدام القياسي: النماذج، الإعدادات، بطاقات الاختيار، ومعظم الواجهات.<br><b>كبير 32px</b> — الشاشات اللمسية والموبايل، الموافقات المفردة المهمة (شروط وأحكام)، وتحسين الوصولية حين يحتاج المستخدم مساحة لمس أكبر.</div></div>
   </section>
 
   <!-- ============ label + description ============ -->
